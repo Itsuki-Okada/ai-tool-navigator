@@ -49,13 +49,11 @@ function Diagnosis({ categoryId, resume }: { categoryId: CategoryId; resume: boo
   });
   // かんたん診断（5問）／詳しく診断（全問）
   const [depth, setDepth] = useState<DiagnosisDepth>(() => (resume && savedDraft?.depth) || data.preferences.depth);
-  // 自動で進まない質問で選択したとき、「次へ」ボタンを光らせて案内する
+  // 選択肢を選んだとき、「次へ」ボタンを光らせて次の操作を案内する（自動では進まない）
   const [nudge, setNudge] = useState(0);
   const [askResume, setAskResume] = useState(!resume && !!savedDraft);
   const [dir, setDir] = useState<'next' | 'prev'>('next');
   const [phase, setPhase] = useState<'questions' | 'analyzing'>('questions');
-  const advanceTimer = useRef<number | undefined>(undefined);
-  useEffect(() => () => window.clearTimeout(advanceTimer.current), []);
 
   const visible = useMemo(() => getVisibleQuestions(categoryId, answers, depth), [categoryId, answers, depth]);
   const fullCount = useMemo(() => getVisibleQuestions(categoryId, answers, 'full').length, [categoryId, answers]);
@@ -94,7 +92,6 @@ function Diagnosis({ categoryId, resume }: { categoryId: CategoryId; resume: boo
 
   const goNext = useCallback(
     (from: Answers = answers) => {
-      window.clearTimeout(advanceTimer.current);
       const list = getVisibleQuestions(categoryId, from, depth);
       const i = Math.max(0, list.findIndex((q) => q.id === question.id));
       setDir('next');
@@ -106,14 +103,12 @@ function Diagnosis({ categoryId, resume }: { categoryId: CategoryId; resume: boo
   );
 
   const goBack = () => {
-    window.clearTimeout(advanceTimer.current);
     if (index === 0) return navigate('/navigate');
     setDir('prev');
     setCurrentId(visible[index - 1].id);
   };
 
   const restart = () => {
-    window.clearTimeout(advanceTimer.current);
     setAnswers({});
     setDraft(null);
     setDir('prev');
@@ -122,7 +117,6 @@ function Diagnosis({ categoryId, resume }: { categoryId: CategoryId; resume: boo
   };
 
   const changeDepth = (d: DiagnosisDepth) => {
-    window.clearTimeout(advanceTimer.current);
     setDepth(d);
     setPreferences({ depth: d });
     const list = getVisibleQuestions(categoryId, answersRef.current, d);
@@ -141,17 +135,8 @@ function Diagnosis({ categoryId, resume }: { categoryId: CategoryId; resume: boo
     setAnswers(pruneAnswers(categoryId, next));
   };
 
-  const goNextRef = useRef(goNext);
-  goNextRef.current = goNext;
-  const onPicked = (autoAdvance: boolean) => {
-    window.clearTimeout(advanceTimer.current);
-    if (!autoAdvance) {
-      setNudge((n) => n + 1);
-      return;
-    }
-    // 選択の演出を見せてから、最新の回答で次の質問へ
-    advanceTimer.current = window.setTimeout(() => goNextRef.current(answersRef.current), prefersReducedMotion() ? 120 : 340);
-  };
+  // 選択しても自動では次へ進まない（「次へ」ボタン or Enter で進む）
+  const onPicked = () => setNudge((n) => n + 1);
 
   // Enter で次へ（テキスト入力中は除く）
   useEffect(() => {

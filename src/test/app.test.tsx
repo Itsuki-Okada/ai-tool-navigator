@@ -90,11 +90,25 @@ describe('画面の動作', () => {
     expect(screen.getByText('入力したら「次へ」を押してください（空欄のままでも進めます）')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /次へ/ }));
-    // 自由入力欄がある質問は、選んでも自動では進まない（案内を表示）
+    // 選んでも自動では進まない（案内を表示）
     expect(await screen.findByText('選んだあと、必要なら補足を入力して「次へ」を押してください')).toBeInTheDocument();
     await user.click(screen.getByRole('radio', { name: /ランディングページ/ }));
     await new Promise((r) => setTimeout(r, 300));
     expect(screen.getByRole('heading', { name: '作りたいものの種類は？' })).toBeInTheDocument();
+    // 補足欄のない単一選択（開発環境）でも、選んだだけでは進まない
+    await user.click(screen.getByRole('button', { name: /次へ/ }));
+    await user.click(screen.getByRole('button', { name: /次へ/ }));
+    await screen.findByRole('heading', { name: 'どの開発環境で作りますか？' });
+    expect(screen.getByText('選んだら「次へ」を押してください（選び直しもできます）')).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /Claude Code/ }));
+    await new Promise((r) => setTimeout(r, 600));
+    expect(screen.getByRole('heading', { name: 'どの開発環境で作りますか？' })).toBeInTheDocument();
+    // 選び直しもできる
+    await user.click(screen.getByRole('radio', { name: /VS Code/ }));
+    expect(screen.getByRole('radio', { name: /VS Code/ })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: /Claude Code/ })).toHaveAttribute('aria-checked', 'false');
+    await user.click(screen.getByRole('button', { name: /次へ/ }));
+    expect(await screen.findByRole('heading', { name: 'データを保存する必要はありますか？' })).toBeInTheDocument();
   });
 
   it('テンプレートで使用するAIを切り替えると形式が変わる', async () => {

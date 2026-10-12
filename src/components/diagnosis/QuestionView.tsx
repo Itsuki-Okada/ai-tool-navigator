@@ -6,25 +6,23 @@ import { Term } from '../ui/Term';
 
 const MAX_TEXT = 2000;
 
-/** 選んだだけで次へ進む質問か（単一選択で、補足の入力欄がないもの） */
-function autoAdvances(q: Question): boolean {
-  return q.type === 'single' && !q.allowFreeText;
-}
-
-/** 質問ごとの操作方法の案内（自動で進むかどうかを明示する） */
+/**
+ * 質問ごとの操作方法の案内
+ * どの質問も選んだだけでは進まず、「次へ」ボタン（または Enter キー）で進みます。
+ */
 function operationHint(q: Question): string {
   if (q.type === 'text') return '入力したら「次へ」を押してください（空欄のままでも進めます）';
   if (q.type === 'multi') return '当てはまるものをすべて選んで「次へ」を押してください';
   if (q.allowFreeText) return '選んだあと、必要なら補足を入力して「次へ」を押してください';
-  return '選ぶと自動で次の質問へ進みます';
+  return '選んだら「次へ」を押してください（選び直しもできます）';
 }
 
 interface Props {
   question: Question;
   answer: Answer | undefined;
   onChange: (a: Answer | undefined) => void;
-  /** 選択肢を選んだとき。autoAdvance が true なら自動で次へ進む */
-  onPicked: (autoAdvance: boolean) => void;
+  /** 選択肢を選んだとき（「次へ」ボタンの強調に使用。自動では進まない） */
+  onPicked: () => void;
   placeholder?: string;
   examples?: string[];
   stepLabel: string;
@@ -51,11 +49,11 @@ export function QuestionView({ question: q, answer, onChange, onPicked, placehol
       if (value === UNSURE) return emit(values.includes(UNSURE) ? [] : [UNSURE], text);
       const base = values.filter((v) => v !== UNSURE);
       emit(base.includes(value) ? base.filter((v) => v !== value) : [...base, value], text);
-      return onPicked(false);
+      return onPicked();
     }
     const already = values[0] === value;
     emit(already ? [] : [value], text);
-    if (!already) onPicked(autoAdvances(q));
+    if (!already) onPicked();
   };
 
   // 数字キーで選択（入力欄にフォーカスがないとき）
