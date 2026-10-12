@@ -1,0 +1,303 @@
+@import 'tailwindcss';
+
+/* ================================================================
+   デザイントークン
+   深いネイビー × ティファニーブルー。光の演出は控えめに。
+   ================================================================ */
+@theme {
+  --font-sans: 'Inter Tight', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --color-ink-950: #04060b;
+  --color-ink-900: #070b14;
+  --color-ink-850: #0a101c;
+  --color-ink-800: #0e1524;
+  --color-ink-700: #152036;
+  --color-ink-600: #1d2a44;
+
+  --color-fg: #e9eff6;
+  --color-fg-soft: #b9c6d6;
+  --color-muted: #8597ad;
+  --color-faint: #5a6b82;
+
+  --color-accent: #5fe3dc;
+  --color-accent-soft: #9af0ea;
+  --color-accent-deep: #1fa7a2;
+
+  --color-ai-chatgpt: #7ddcb0;
+  --color-ai-gemini: #8fb4ff;
+  --color-ai-claude: #f0a983;
+
+  --color-warn: #f3c46b;
+  --color-danger: #ff7d8a;
+
+  --animate-fade-up: fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-fade-in: fade-in 0.5s ease both;
+  --animate-slide-next: slide-next 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-slide-prev: slide-prev 0.38s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-pop: pop 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-next {
+    from { opacity: 0; transform: translateX(28px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes slide-prev {
+    from { opacity: 0; transform: translateX(-28px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+}
+
+:root {
+  color-scheme: dark;
+  --ai-chatgpt: var(--color-ai-chatgpt);
+  --ai-gemini: var(--color-ai-gemini);
+  --ai-claude: var(--color-ai-claude);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+  /* スライドイン演出などで一瞬はみ出しても、スマホで横スクロール・縮小表示にならないようにする */
+  overflow-x: clip;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink-950);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  font-feature-settings: 'palt' 1;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: clip;
+}
+
+::selection {
+  background: color-mix(in oklab, var(--color-accent) 35%, transparent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* 画面切り替え時にプログラムでフォーカスする見出しには枠を出さない */
+[tabindex='-1']:focus-visible {
+  outline: none;
+}
+
+/* ================================================================
+   コンポーネント用のユーティリティ
+   ================================================================ */
+@utility glass {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.045), rgb(255 255 255 / 0.018));
+  border: 1px solid rgb(160 210 225 / 0.11);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+}
+
+@utility glass-strong {
+  background: linear-gradient(180deg, rgb(20 32 52 / 0.82), rgb(10 16 28 / 0.86));
+  border: 1px solid rgb(160 210 225 / 0.14);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+@utility hairline {
+  border-color: rgb(160 210 225 / 0.1);
+}
+
+@utility text-gradient {
+  background: linear-gradient(100deg, #f4fbff 10%, var(--color-accent-soft) 55%, var(--color-accent) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+/* HUD風の四隅のブラケット（カードのホバー・選択で表示） */
+.hud {
+  position: relative;
+}
+.hud::before,
+.hud::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--color-accent);
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  pointer-events: none;
+}
+.hud::before {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid;
+  border-left: 1.5px solid;
+  border-top-left-radius: 14px;
+  transform: translate(4px, 4px);
+}
+.hud::after {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid;
+  border-right: 1.5px solid;
+  border-bottom-right-radius: 14px;
+  transform: translate(-4px, -4px);
+}
+.hud:hover::before,
+.hud:hover::after,
+.hud:focus-visible::before,
+.hud:focus-visible::after,
+.hud[data-active='true']::before,
+.hud[data-active='true']::after {
+  opacity: 1;
+  transform: none;
+}
+
+/* 背景のグリッド */
+.bg-grid {
+  background-image:
+    linear-gradient(rgb(140 200 220 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(140 200 220 / 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 30%, transparent 75%);
+}
+
+/* ナビゲーション演出の線（流れる点線） */
+.route-flow {
+  stroke-dasharray: 3 9;
+  animation: route-flow 2.4s linear infinite;
+}
+@keyframes route-flow {
+  to { stroke-dashoffset: -48; }
+}
+.route-draw {
+  stroke-dasharray: 600;
+  stroke-dashoffset: 600;
+  animation: route-draw 1.6s cubic-bezier(0.6, 0, 0.2, 1) forwards;
+}
+@keyframes route-draw {
+  to { stroke-dashoffset: 0; }
+}
+.radar-sweep {
+  transform-origin: center;
+  animation: radar 6s linear infinite;
+}
+@keyframes radar {
+  to { transform: rotate(360deg); }
+}
+.node-pulse {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: node-pulse 2.6s ease-out infinite;
+}
+@keyframes node-pulse {
+  0% { transform: scale(1); opacity: 0.55; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+
+/* 解析中のスキャンライン */
+.scanline {
+  animation: scan 1.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+@keyframes scan {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+.blink {
+  animation: blink 1s steps(2, start) infinite;
+}
+@keyframes blink {
+  to { visibility: hidden; }
+}
+.shimmer {
+  background: linear-gradient(90deg, transparent, rgb(95 227 220 / 0.18), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* 段階的な表示のための遅延 */
+.stagger > * {
+  animation: var(--animate-fade-up);
+}
+.stagger > *:nth-child(1) { animation-delay: 0.02s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.14s; }
+.stagger > *:nth-child(4) { animation-delay: 0.2s; }
+.stagger > *:nth-child(5) { animation-delay: 0.26s; }
+.stagger > *:nth-child(6) { animation-delay: 0.32s; }
+.stagger > *:nth-child(7) { animation-delay: 0.38s; }
+.stagger > *:nth-child(8) { animation-delay: 0.44s; }
+.stagger > *:nth-child(9) { animation-delay: 0.5s; }
+.stagger > *:nth-child(10) { animation-delay: 0.56s; }
+.stagger > *:nth-child(11) { animation-delay: 0.62s; }
+.stagger > *:nth-child(n + 12) { animation-delay: 0.68s; }
+
+/* 横スクロールのチップ列でスクロールバーを隠す */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* プロンプト編集欄 */
+.prompt-area {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.75;
+  tab-size: 2;
+}
+
+/* ================================================================
+   OSの「視差効果を減らす」設定への対応
+   ================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .route-flow,
+  .radar-sweep,
+  .node-pulse,
+  .scanline,
+  .shimmer {
+    animation: none !important;
+  }
+}
