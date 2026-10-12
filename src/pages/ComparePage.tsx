@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ArrowRight, CalendarCheck, Heart, Info } from 'lucide-react';
+import { ArrowRight, CalendarCheck, Heart, Info, Layers } from 'lucide-react';
 import { AI_IDS, AI_PROFILES, NEEDS } from '../data/aiProfiles';
-import { COMPARISON_LAST_REVIEWED, COMPARISON_NOTE, COMPARISON_ROWS } from '../data/comparison';
+import { COMPARISON_LAST_REVIEWED, COMPARISON_NOTE, COMPARISON_ROWS, type ComparisonCell } from '../data/comparison';
 import { Button, LinkButton } from '../components/ui/Button';
 import { AiMark, Chip, ExternalA, LevelBar, PageHeader, SectionHeading } from '../components/ui/misc';
 import { Segmented } from '../components/ui/Segmented';
@@ -80,7 +80,16 @@ export function ComparePage() {
 
       {/* ---------- 比較表（PC） ---------- */}
       <section aria-labelledby="table-heading" className="mt-16">
-        <SectionHeading id="table-heading" eyebrow="Matrix" title="項目ごとの比較" description={<>「プラン等で異なる」が付いた項目は、モデル・プラン・地域によって内容が変わります。</>} />
+        <SectionHeading
+          id="table-heading"
+          eyebrow="Matrix"
+          title="項目ごとの比較"
+          description={
+            <>
+              <VariesBadge inline /> が付いた項目は、モデル・プラン・地域によって内容が変わります。
+            </>
+          }
+        />
 
         <div className="hidden overflow-hidden rounded-2xl border hairline md:block">
           <table className="w-full table-fixed border-collapse text-sm">
@@ -106,8 +115,7 @@ export function ComparePage() {
                   </th>
                   {AI_IDS.map((ai) => (
                     <td key={ai} className="px-5 py-4 text-fg-soft">
-                      {row.cells[ai].text}
-                      {row.cells[ai].varies && <VariesBadge />}
+                      <CellText cell={row.cells[ai]} />
                     </td>
                   ))}
                 </tr>
@@ -130,8 +138,7 @@ export function ComparePage() {
               <div key={row.id} className="glass rounded-xl p-4">
                 <dt className="text-xs text-muted">{row.label}</dt>
                 <dd className="mt-1 text-sm text-fg-soft">
-                  {row.cells[focus].text}
-                  {row.cells[focus].varies && <VariesBadge />}
+                  <CellText cell={row.cells[focus]} />
                 </dd>
               </div>
             ))}
@@ -174,10 +181,8 @@ export function ComparePage() {
                       <td key={ai} className="px-4 py-3" title={`${c.note}${c.limitation ? `（${c.limitation}）` : ''}`}>
                         <span className="flex flex-col gap-1">
                           <LevelBar level={c.level} max={3} color={`var(${AI_PROFILES[ai].colorVar})`} label={`${AI_PROFILES[ai].name} ${NEEDS[n].label}`} />
-                          <span className="text-[11px] text-faint">
-                            {LEVEL_TEXT[c.level]}
-                            {c.varies && '・プランで異なる'}
-                          </span>
+                          <span className="block text-[11px] leading-snug text-fg-soft">{LEVEL_TEXT[c.level]}</span>
+                          {c.varies && <span className="block text-[10px] leading-snug text-warn/80">※ プラン・モデルで異なる</span>}
                         </span>
                       </td>
                     );
@@ -199,10 +204,25 @@ export function ComparePage() {
   );
 }
 
-function VariesBadge() {
+/** 比較表のセル：本文と「プラン・モデルで異なる」の注記を別の行に表示 */
+function CellText({ cell }: { cell: ComparisonCell }) {
   return (
-    <Chip tone="warn" className="mt-2 flex w-fit text-[10px]">
-      プラン等で異なる
+    <>
+      <span className="block leading-relaxed">{cell.text}</span>
+      {cell.varies && (
+        <span className="mt-2.5 block">
+          <VariesBadge />
+        </span>
+      )}
+    </>
+  );
+}
+
+function VariesBadge({ inline }: { inline?: boolean }) {
+  return (
+    <Chip tone="warn" className={cx('gap-1 text-[11px] leading-5', inline && 'mx-0.5 align-middle')}>
+      <Layers className="size-3" aria-hidden />
+      プラン・モデルで異なる
     </Chip>
   );
 }

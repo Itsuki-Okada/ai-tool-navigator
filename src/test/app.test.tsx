@@ -116,7 +116,7 @@ describe('画面の動作', () => {
     render(<App />);
     await go('#/compare');
     expect(await screen.findByText(/掲載情報の最終確認日/)).toBeInTheDocument();
-    expect(screen.getAllByText('プラン等で異なる').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('プラン・モデルで異なる').length).toBeGreaterThan(0);
   });
 
   it('存在しないページ・結果は案内を表示', async () => {
