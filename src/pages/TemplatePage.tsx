@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowLeft, BookmarkPlus, Check, CircleAlert, RefreshCw, SearchX } from 'lucide-react';
+import { ArrowLeft, BookmarkPlus, Check, CircleAlert, ListOrdered, RefreshCw, SearchX } from 'lucide-react';
 import { TEMPLATE_MAP } from '../data/templates';
+import { TARGET_PROFILES } from '../data/promptRecipes';
+import { Segmented } from '../components/ui/Segmented';
+import { adaptTemplate, availableTemplateTargets, defaultTemplateTarget } from '../lib/prompt/templateAdapter';
 import { PromptEditor } from '../components/prompt/PromptEditor';
 import { Button, LinkButton } from '../components/ui/Button';
 import { AiMark, Chip, EmptyState, PrivacyNote } from '../components/ui/misc';
 import { fillTemplate, missingRequired } from '../lib/prompt/template';
 import { useStore } from '../state/store';
 import { useToast } from '../state/toast';
-import type { PromptTemplate } from '../types';
+import type { PromptTarget, PromptTemplate } from '../types';
 
 export function TemplatePage({ id }: { id: string }) {
   const t = TEMPLATE_MAP[id];
@@ -31,9 +34,21 @@ function TemplateFill({ template: t }: { template: PromptTemplate }) {
   const { touchTemplate, savePrompt, updatePrompt, data } = useStore();
   const toast = useToast();
   const [values, setValues] = useState<Record<string, string>>({});
-  const [manual, setManual] = useState<string | null>(null);
+  const targets = availableTemplateTargets(t);
+  const [target, setTarget] = useState<PromptTarget>(() => defaultTemplateTarget(t));
+  // 出力先ごとに手動編集の内容を保持（切り替えても編集が消えない）
+  const [manualMap, setManualMap] = useState<Partial<Record<PromptTarget, string>>>({});
+  const manual = manualMap[target] ?? null;
+  const setManual = (v: string | null) =>
+    setManualMap((m) => {
+      const n = { ...m };
+      if (v === null) delete n[target];
+      else n[target] = v;
+      return n;
+    });
   const [showErrors, setShowErrors] = useState(false);
-  const [savedId, setSavedId] = useState<string | null>(null);
+  const [savedIds, setSavedIds] = useState<Partial<Record<PromptTarget, string>>>({});
+  const savedId = savedIds[target] ?? null;
   const [justSaved, setJustSaved] = useState(false);
   const timer = useRef<number | undefined>(undefined);
 
@@ -42,7 +57,7 @@ function TemplateFill({ template: t }: { template: PromptTemplate }) {
     return () => window.clearTimeout(timer.current);
   }, [t.id, touchTemplate]);
 
-  const generated = useMemo(() => fillTemplate(t, values), [t, values]);
+  const generated = useMemo(() => adaptTemplate(fillTemplate(t, values), t, target), [t, values, target]);
   const text = manual ?? generated;
   const missing = missingRequired(t, values);
 
@@ -59,13 +74,14 @@ function TemplateFill({ template: t }: { template: PromptTemplate }) {
     } else {
       const firstValue = values[t.fields[0].key]?.trim();
       const p = savePrompt({
-        title: firstValue ? `${t.title}：${firstValue.slice(0, 30)}` : t.title,
+        title: `${firstValue ? `${t.title}：${firstValue.slice(0, 30)}` : t.title}（${TARGET_PROFILES[target].label}）`,
         body: text,
         source: 'template',
+        target,
         templateId: t.id,
         edited: manual !== null,
       });
-      setSavedId(p.id);
+      setSavedIds((m) => ({ ...m, [target]: p.id }));
       toast.show('プロンプトを保存しました。', 'success', { label: '保存一覧へ', href: '#/saved' });
     }
     setJustSaved(true);
@@ -139,8 +155,20 @@ function TemplateFill({ template: t }: { template: PromptTemplate }) {
 
         {/* ---------- 完成したプロンプト ---------- */}
         <div className="min-w-0 animate-fade-up [animation-delay:.1s]">
+          {targets.length > 1 && (
+            <div className="glass mb-4 rounded-2xl p-4">
+              <p className="label-mono mb-2">使用するAI</p>
+              <Segmented
+                label="使用するAI"
+                value={target}
+                onChange={setTarget}
+                options={targets.map((x) => ({ value: x, label: TARGET_PROFILES[x].label }))}
+              />
+              <p className="mt-2 text-xs text-muted">{TARGET_PROFILES[target].description}</p>
+            </div>
+          )}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="label-mono">Step 02 — 完成したプロンプト</p>
+            <p className="label-mono">Step 02 — 完成したプロンプト（{TARGET_PROFILES[target].label}）</p>
             {manual !== null && manual !== generated && (
               <Button variant="ghost" size="sm" onClick={() => setManual(null)} icon={<RefreshCw className="size-3.5" aria-hidden />}>
                 入力内容から作り直す
@@ -148,6 +176,7 @@ function TemplateFill({ template: t }: { template: PromptTemplate }) {
             )}
           </div>
           <PromptEditor
+            key={target}
             value={text}
             edited={manual !== null && manual !== generated}
             onChange={setManual}
@@ -163,12 +192,23 @@ function TemplateFill({ template: t }: { template: PromptTemplate }) {
             <p className="mt-2 text-xs text-warn">プロンプトを直接編集中のため、左の入力内容は反映されません。「入力内容から作り直す」で戻せます。</p>
           )}
           <div className="glass mt-4 rounded-2xl p-5">
+            <p className="mb-3 flex items-center gap-2 text-sm font-medium text-accent">
+              <ListOrdered className="size-4" aria-hidden />
+              <span className="text-fg">使い方（{TARGET_PROFILES[target].label}）</span>
+            </p>
+            <ol className="list-decimal space-y-1.5 pl-4 text-sm text-fg-soft marker:text-accent/70">
+              {TARGET_PROFILES[target].howTo.map((h) => (
+                <li key={h}>{h}</li>
+              ))}
+            </ol>
+          </div>
+          <div className="glass mt-4 rounded-2xl p-5">
             <p className="mb-3 flex items-center gap-2 text-sm font-medium text-warn">
               <CircleAlert className="size-4" aria-hidden />
               <span className="text-fg">使用時の注意点</span>
             </p>
             <ul className="space-y-1.5 text-sm text-fg-soft">
-              {t.notes.map((n) => (
+              {[...t.notes, ...TARGET_PROFILES[target].cautions].map((n) => (
                 <li key={n}>{n}</li>
               ))}
               <li>AIの回答には誤りが含まれることがあります。重要な内容は必ず確認してください。</li>

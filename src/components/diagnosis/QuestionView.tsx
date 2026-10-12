@@ -1,17 +1,30 @@
 import { useEffect, useId, useRef } from 'react';
-import { Check, CircleHelp } from 'lucide-react';
+import { Check, CircleHelp, MousePointerClick } from 'lucide-react';
 import { UNSURE, type Answer, type Question } from '../../types';
 import { cx } from '../../lib/utils';
 import { Term } from '../ui/Term';
 
 const MAX_TEXT = 2000;
 
+/** 選んだだけで次へ進む質問か（単一選択で、補足の入力欄がないもの） */
+function autoAdvances(q: Question): boolean {
+  return q.type === 'single' && !q.allowFreeText;
+}
+
+/** 質問ごとの操作方法の案内（自動で進むかどうかを明示する） */
+function operationHint(q: Question): string {
+  if (q.type === 'text') return '入力したら「次へ」を押してください（空欄のままでも進めます）';
+  if (q.type === 'multi') return '当てはまるものをすべて選んで「次へ」を押してください';
+  if (q.allowFreeText) return '選んだあと、必要なら補足を入力して「次へ」を押してください';
+  return '選ぶと自動で次の質問へ進みます';
+}
+
 interface Props {
   question: Question;
   answer: Answer | undefined;
   onChange: (a: Answer | undefined) => void;
-  /** 単一選択で選んだあと自動で次へ進む */
-  onPicked: () => void;
+  /** 選択肢を選んだとき。autoAdvance が true なら自動で次へ進む */
+  onPicked: (autoAdvance: boolean) => void;
   placeholder?: string;
   examples?: string[];
   stepLabel: string;
@@ -37,11 +50,12 @@ export function QuestionView({ question: q, answer, onChange, onPicked, placehol
     if (q.type === 'multi') {
       if (value === UNSURE) return emit(values.includes(UNSURE) ? [] : [UNSURE], text);
       const base = values.filter((v) => v !== UNSURE);
-      return emit(base.includes(value) ? base.filter((v) => v !== value) : [...base, value], text);
+      emit(base.includes(value) ? base.filter((v) => v !== value) : [...base, value], text);
+      return onPicked(false);
     }
     const already = values[0] === value;
     emit(already ? [] : [value], text);
-    if (!already && !q.allowFreeText) onPicked();
+    if (!already) onPicked(autoAdvances(q));
   };
 
   // 数字キーで選択（入力欄にフォーカスがないとき）
@@ -69,12 +83,15 @@ export function QuestionView({ question: q, answer, onChange, onPicked, placehol
       <h2 ref={headingRef} tabIndex={-1} className="text-2xl leading-snug font-semibold tracking-tight text-fg outline-none sm:text-[1.75rem]">
         {q.title}
       </h2>
-      {(q.help || isMulti) && (
+      {q.help && (
         <p id={helpId} className="mt-2 text-sm text-muted">
           {q.help}
-          {isMulti && <span className="ml-1 text-accent/80">複数選択できます。</span>}
         </p>
       )}
+      <p className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-accent/15 bg-accent/[0.05] px-3 py-1 text-xs text-accent/90">
+        <MousePointerClick className="size-3.5" aria-hidden />
+        {operationHint(q)}
+      </p>
       {q.terms && q.terms.length > 0 && (
         <p className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
           <span>用語：</span>

@@ -1,6 +1,6 @@
 import { AI_IDS, AI_PROFILES, NEEDS } from '../../data/aiProfiles';
 import { CATEGORY_MAP } from '../../data/categories';
-import { CAUTION_RULES, CATEGORY_RULES, PLAYBOOK_RULES, PREFER_BONUS, TIE_THRESHOLD } from '../../data/scoringRules';
+import { CAUTION_RULES, CATEGORY_RULES, PLAYBOOK_RULES, PREFER_BONUS, PREFER_POINTS, TIE_POINTS } from '../../data/scoringRules';
 import type {
   AiId,
   AiScore,
@@ -19,8 +19,10 @@ import { getVisibleQuestions, hasConcreteAnswer, matchesAll, selectedOptions } f
  * AI選定エンジン
  * ----------------------------------------------------------------
  * 1. カテゴリと回答から「ニーズ（何が必要か）」と重みを集計
- * 2. 各AIの特徴データ（0〜3の目安）とニーズを掛け合わせて評価
- * 3. 差が小さい場合は同程度の候補として扱う
+ * 2. 各AIの特徴データ（0〜3の目安）とニーズを掛け合わせて「点数」を計算
+ *    （ユーザーがふだん使っているAIなどの意向は小さな加点）
+ * 3. 1位との点数差が TIE_POINTS 未満なら、無理に順位をつけず同程度の候補とする
+ *    回答が少ないほど判断が不確かなので、同程度とみなす幅を広げる
  * UIに依存しないため、将来AI APIによる判定に差し替えることもできます。
  */
 
@@ -55,6 +57,7 @@ export function collectNeeds(categoryId: CategoryId, answers: Answers) {
       }
     }
   }
+  // マイナスの重みで打ち消されたニーズ（合計0以下）は評価に使わない
   return { needs: [...needs.values()].filter((n) => n.weight > 0), prefer };
 }
 
@@ -92,6 +95,7 @@ function evaluateConfidence(categoryId: CategoryId, answers: Answers): { confide
 export function recommend(categoryId: CategoryId, answers: Answers): Recommendation {
   const { needs, prefer } = collectNeeds(categoryId, answers);
   const totalWeight = needs.reduce((s, n) => s + n.weight, 0) || 1;
+  const conf = evaluateConfidence(categoryId, answers);
 
   const raw = AI_IDS.map((ai) => {
     const profile = AI_PROFILES[ai];
@@ -110,14 +114,23 @@ export function recommend(categoryId: CategoryId, answers: Answers): Recommendat
       if (level === 0 && n.weight >= 2) blockedBy.push(n.need);
     }
     const base = sum / (totalWeight * MAX_LEVEL);
-    const bonus = Math.min(prefer[ai].bonus, 3) * PREFER_BONUS;
+    const preferUnits = Math.min(prefer[ai].bonus, 3);
     const criteria: Partial<Record<Criterion, number>> = {};
     for (const [k, v] of Object.entries(critSum)) criteria[k as Criterion] = v.m ? v.s / v.m : 0;
-    return { ai, score: Math.min(1, base + bonus), blockedBy, criteria };
-  }).sort((a, b) => b.score - a.score);
+    return {
+      ai,
+      // 表示用（段階評価）の 0〜1 の値
+      score: Math.min(1, base + preferUnits * PREFER_BONUS),
+      // 順位づけ用の点数（重み × レベル ＋ 意向の加点）
+      points: sum + preferUnits * PREFER_POINTS,
+      blockedBy,
+      criteria,
+    };
+  }).sort((a, b) => b.points - a.points || b.score - a.score);
 
   const best = raw[0];
-  const topGroup = raw.filter((r) => best.score - r.score < TIE_THRESHOLD && r.blockedBy.length === 0).map((r) => r.ai);
+  const tieWidth = TIE_POINTS[conf.confidence];
+  const topGroup = raw.filter((r) => best.points - r.points < tieWidth && r.blockedBy.length === 0).map((r) => r.ai);
   if (topGroup.length === 0) topGroup.push(best.ai);
 
   const ranking: AiScore[] = raw.map((r) => {
@@ -162,7 +175,9 @@ export function recommend(categoryId: CategoryId, answers: Answers): Recommendat
     if (influential.length >= 4) break;
   }
   for (const ai of AI_IDS) {
-    if (prefer[ai].bonus > 0) influential.push(`${prefer[ai].sources.join(' / ')} → ${AI_PROFILES[ai].name}を少し優先`);
+    if (prefer[ai].bonus > 0) {
+      influential.push(`${prefer[ai].sources.join(' / ')} → ${AI_PROFILES[ai].name}を${prefer[ai].bonus >= 3 ? '優先' : '少し優先'}`);
+    }
   }
 
   const lead = topGroup[0];
@@ -185,10 +200,10 @@ export function recommend(categoryId: CategoryId, answers: Answers): Recommendat
     ...PLAYBOOK_RULES.filter((p) => matchesAll(p.when, answers) && (!p.ai || topGroup.includes(p.ai))).map((p) => p.step),
   ];
 
-  const conf = evaluateConfidence(categoryId, answers);
   let confidenceNote = conf.note;
   if (topGroup.length > 1) {
-    confidenceNote += ' 上位の候補に大きな差がないため、同程度のおすすめとして表示しています。';
+    confidenceNote +=
+      ' 今回の条件では機能面で大きな差がないため、無理に1つに絞らず同程度のおすすめとして表示しています。ふだん使っているAIや、使い慣れたAIを選んで問題ありません。';
   }
 
   return {

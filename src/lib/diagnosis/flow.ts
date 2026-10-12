@@ -1,6 +1,6 @@
 import { CATEGORY_MAP } from '../../data/categories';
 import { QUESTION_MAP } from '../../data/questions';
-import { UNSURE, type Answer, type Answers, type CategoryId, type Condition, type Question, type QuestionOption } from '../../types';
+import { UNSURE, type Answer, type Answers, type CategoryId, type Condition, type DiagnosisDepth, type Question, type QuestionOption } from '../../types';
 
 /** 回答が条件を満たすか */
 export function matchesCondition(cond: Condition, answers: Answers): boolean {
@@ -19,10 +19,15 @@ export function matchesAll(conds: Condition[] | undefined, answers: Answers): bo
   return !conds || conds.every((c) => matchesCondition(c, answers));
 }
 
-/** 現在の回答で表示すべき質問の一覧（回答に応じて分岐） */
-export function getVisibleQuestions(categoryId: CategoryId, answers: Answers): Question[] {
+/**
+ * 現在の回答で表示すべき質問の一覧（回答に応じて分岐）
+ * depth = 'quick' のときは「かんたん診断」用の質問だけに絞ります。
+ * AI選定やプロンプト生成は常に 'full' で評価し、未回答の質問は「判断材料不足」として扱います。
+ */
+export function getVisibleQuestions(categoryId: CategoryId, answers: Answers, depth: DiagnosisDepth = 'full'): Question[] {
   const category = CATEGORY_MAP[categoryId];
-  return category.questionIds
+  const ids = depth === 'quick' ? category.quickQuestionIds : category.questionIds;
+  return ids
     .map((id) => QUESTION_MAP[id])
     .filter((q): q is Question => Boolean(q))
     .filter((q) => matchesAll(q.showIf, answers));

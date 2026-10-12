@@ -48,7 +48,7 @@ export function createEmptyData(): AppData {
     history: [],
     favorites: [],
     savedPrompts: [],
-    preferences: { mode: 'standard', target: null },
+    preferences: { mode: 'standard', target: null, depth: 'quick' },
     recentTemplates: [],
     draft: null,
   };
@@ -116,6 +116,7 @@ function sanitizeDraft(v: unknown): DiagnosisDraft | null {
   if (!isObj(v) || !isCategoryId(v.categoryId)) return null;
   return {
     categoryId: v.categoryId,
+    depth: v.depth === 'full' ? 'full' : 'quick',
     answers: sanitizeAnswers(v.answers),
     stepId: typeof v.stepId === 'string' ? v.stepId.slice(0, 64) : null,
     updatedAt: isoDate(v.updatedAt) ?? new Date().toISOString(),
@@ -140,6 +141,7 @@ export function sanitizeAppData(v: unknown): AppData {
     preferences: {
       mode: MODES.includes(prefs.mode as PromptMode) ? (prefs.mode as PromptMode) : base.preferences.mode,
       target: TARGETS.includes(prefs.target as PromptTarget) ? (prefs.target as PromptTarget) : null,
+      depth: prefs.depth === 'full' ? 'full' : 'quick',
     },
     recentTemplates: Array.isArray(v.recentTemplates)
       ? [...new Set(v.recentTemplates.filter((x): x is string => typeof x === 'string' && !!TEMPLATE_MAP[x]))].slice(0, LIMITS.recentTemplates)

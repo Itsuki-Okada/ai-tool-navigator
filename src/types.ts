@@ -29,6 +29,8 @@ export interface Category {
   examples: string[];
   /** この順番で質問を表示（showIf により一部は自動で省略） */
   questionIds: string[];
+  /** 「かんたん診断」で使う質問（questionIds の一部・5問程度） */
+  quickQuestionIds: string[];
   /** 開発系カテゴリ（Claude Code 向けなどの出力先を表示する） */
   isDev?: boolean;
 }
@@ -286,8 +288,11 @@ export interface SavedPrompt {
   edited?: boolean;
 }
 
+export type DiagnosisDepth = 'quick' | 'full';
+
 export interface DiagnosisDraft {
   categoryId: CategoryId;
+  depth?: DiagnosisDepth;
   answers: Answers;
   stepId: string | null;
   updatedAt: string;
@@ -298,7 +303,7 @@ export interface AppData {
   history: DiagnosisRecord[];
   favorites: AiId[];
   savedPrompts: SavedPrompt[];
-  preferences: { mode: PromptMode; target: PromptTarget | null };
+  preferences: { mode: PromptMode; target: PromptTarget | null; depth: DiagnosisDepth };
   recentTemplates: string[];
   draft: DiagnosisDraft | null;
 }

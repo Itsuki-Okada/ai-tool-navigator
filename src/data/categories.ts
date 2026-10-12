@@ -3,7 +3,7 @@ import type { Category, CategoryId } from '../types';
 /**
  * カテゴリ定義
  * 新しいカテゴリを追加するときは:
- *  1. ここに1件追加（questionIds で質問の順番を指定）
+ *  1. ここに1件追加（questionIds で質問の順番、quickQuestionIds で「かんたん診断」の5問を指定）
  *  2. src/data/questions.ts に必要な質問を追加
  *  3. src/data/scoringRules.ts と src/data/promptRecipes.ts にルールを追加
  *  4. src/types.ts の CategoryId に id を追加
@@ -19,8 +19,9 @@ export const CATEGORIES: Category[] = [
     isDev: true,
     questionIds: [
       'goal', 'web_type', 'web_features', 'web_env', 'web_storage', 'web_login',
-      'web_integrations', 'web_design', 'skill_code', 'quality', 'priority', 'budget', 'deadline', 'notes',
+      'web_integrations', 'web_design', 'skill_code', 'quality', 'priority', 'budget', 'deadline', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'web_type', 'web_env', 'web_storage', 'using_ai'],
   },
   {
     id: 'code',
@@ -32,8 +33,9 @@ export const CATEGORIES: Category[] = [
     isDev: true,
     questionIds: [
       'goal', 'code_task', 'code_lang', 'code_env', 'code_existing', 'code_error',
-      'code_understanding', 'priority', 'budget', 'notes',
+      'code_understanding', 'priority', 'budget', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'code_task', 'code_env', 'code_error', 'using_ai'],
   },
   {
     id: 'image',
@@ -44,8 +46,9 @@ export const CATEGORIES: Category[] = [
     examples: ['ブログのアイキャッチ', 'SNS用バナー', 'キャラクターのイラスト'],
     questionIds: [
       'goal', 'img_mode', 'img_type', 'img_use', 'img_style', 'img_ratio', 'img_text',
-      'img_quality', 'budget', 'notes',
+      'img_quality', 'budget', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'img_mode', 'img_type', 'img_style', 'using_ai'],
   },
   {
     id: 'video',
@@ -56,8 +59,9 @@ export const CATEGORIES: Category[] = [
     examples: ['YouTubeの台本', 'ショート動画の構成', '商品紹介動画'],
     questionIds: [
       'goal', 'vid_type', 'vid_length', 'vid_tasks', 'vid_software', 'vid_caption', 'vid_use',
-      'budget', 'deadline', 'notes',
+      'budget', 'deadline', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'vid_type', 'vid_length', 'vid_tasks', 'using_ai'],
   },
   {
     id: 'writing',
@@ -66,7 +70,8 @@ export const CATEGORIES: Category[] = [
     description: 'ブログ記事、メール、キャッチコピー、説明文を書きたい',
     icon: 'PenLine',
     examples: ['SEOブログ記事', '商品紹介文', 'ビジネスメール'],
-    questionIds: ['goal', 'w_type', 'w_reader', 'w_purpose', 'w_tone', 'w_length', 'w_media', 'quality', 'notes'],
+    questionIds: ['goal', 'w_type', 'w_reader', 'w_purpose', 'w_tone', 'w_length', 'w_media', 'quality', 'using_ai', 'notes'],
+    quickQuestionIds: ['goal', 'w_type', 'w_reader', 'w_length', 'using_ai'],
   },
   {
     id: 'idea',
@@ -77,8 +82,9 @@ export const CATEGORIES: Category[] = [
     examples: ['新サービスのアイデア', 'イベント企画', 'YouTubeのネタ'],
     questionIds: [
       'goal', 'idea_type', 'idea_target', 'idea_purpose', 'idea_constraints', 'idea_count', 'idea_criteria',
-      'freshness', 'notes',
+      'freshness', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'idea_type', 'idea_target', 'idea_purpose', 'using_ai'],
   },
   {
     id: 'marketing',
@@ -88,8 +94,9 @@ export const CATEGORIES: Category[] = [
     icon: 'Megaphone',
     examples: ['Instagram投稿案', '広告コピー', 'キャンペーン施策'],
     questionIds: [
-      'goal', 'mk_platform', 'mk_target', 'mk_product', 'mk_goal', 'mk_issue', 'mk_output', 'budget', 'notes',
+      'goal', 'mk_platform', 'mk_target', 'mk_product', 'mk_goal', 'mk_issue', 'mk_output', 'budget', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'mk_platform', 'mk_product', 'mk_output', 'using_ai'],
   },
   {
     id: 'data',
@@ -99,8 +106,9 @@ export const CATEGORIES: Category[] = [
     icon: 'ChartColumn',
     examples: ['売上データの集計', 'アンケート分析', '報告資料の作成'],
     questionIds: [
-      'goal', 'd_format', 'd_size', 'd_purpose', 'd_output', 'd_software', 'd_sensitivity', 'skill_general', 'notes',
+      'goal', 'd_format', 'd_size', 'd_purpose', 'd_output', 'd_software', 'd_sensitivity', 'skill_general', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'd_format', 'd_purpose', 'd_sensitivity', 'using_ai'],
   },
   {
     id: 'automation',
@@ -111,8 +119,9 @@ export const CATEGORIES: Category[] = [
     examples: ['メールの自動振り分け', 'スプレッドシートの自動集計', '定型文の作成'],
     isDev: true,
     questionIds: [
-      'goal', 'au_task', 'au_steps', 'au_services', 'au_frequency', 'au_connect', 'au_constraints', 'skill_code', 'notes',
+      'goal', 'au_task', 'au_steps', 'au_services', 'au_frequency', 'au_connect', 'au_constraints', 'skill_code', 'using_ai', 'notes',
     ],
+    quickQuestionIds: ['goal', 'au_task', 'au_services', 'au_connect', 'using_ai'],
   },
   {
     id: 'research',
@@ -121,7 +130,8 @@ export const CATEGORIES: Category[] = [
     description: '市場調査、競合調査、テーマの下調べをしたい',
     icon: 'Search',
     examples: ['競合サービスの比較', '業界動向の調査', '論文の要約'],
-    questionIds: ['goal', 'rs_topic', 'rs_freshness', 'rs_sources', 'rs_depth', 'rs_output', 'notes'],
+    questionIds: ['goal', 'rs_topic', 'rs_freshness', 'rs_sources', 'rs_depth', 'rs_output', 'using_ai', 'notes'],
+    quickQuestionIds: ['goal', 'rs_topic', 'rs_freshness', 'rs_depth', 'using_ai'],
   },
   {
     id: 'strategy',
@@ -130,7 +140,8 @@ export const CATEGORIES: Category[] = [
     description: '事業計画書、戦略の整理、意思決定の材料を作りたい',
     icon: 'Briefcase',
     examples: ['事業計画書の骨子', 'SWOT分析', '新規事業の検討'],
-    questionIds: ['goal', 'st_type', 'st_stage', 'st_inputs', 'st_output', 'freshness', 'priority', 'deadline', 'notes'],
+    questionIds: ['goal', 'st_type', 'st_stage', 'st_inputs', 'st_output', 'freshness', 'priority', 'deadline', 'using_ai', 'notes'],
+    quickQuestionIds: ['goal', 'st_type', 'st_stage', 'st_inputs', 'using_ai'],
   },
   {
     id: 'other',
@@ -139,7 +150,8 @@ export const CATEGORIES: Category[] = [
     description: '当てはまるものがない場合は、自由に入力してください',
     icon: 'Sparkles',
     examples: ['学習の計画', '旅行プラン', '悩み相談の整理'],
-    questionIds: ['goal', 'other_output', 'other_input', 'tools', 'skill_general', 'freshness', 'quality', 'priority', 'budget', 'notes'],
+    questionIds: ['goal', 'other_output', 'other_input', 'tools', 'skill_general', 'freshness', 'quality', 'priority', 'budget', 'using_ai', 'notes'],
+    quickQuestionIds: ['goal', 'other_output', 'other_input', 'tools', 'using_ai'],
   },
 ];
 

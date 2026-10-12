@@ -52,7 +52,10 @@ export function ResultPage({ id }: { id: string }) {
   }
 
   const category = CATEGORY_MAP[record.categoryId];
-  const top = rec.ranking.filter((r) => rec.topGroup.includes(r.ai));
+  // 同程度の候補が複数あるときは、お気に入りのAIを先に表示
+  const top = rec.ranking
+    .filter((r) => rec.topGroup.includes(r.ai))
+    .sort((a, b) => Number(data.favorites.includes(b.ai)) - Number(data.favorites.includes(a.ai)));
   const second = rec.ranking.find((r) => !rec.topGroup.includes(r.ai));
   const criteriaUsed = [...new Set(rec.ranking.flatMap((r) => Object.keys(r.criteria)))] as Criterion[];
   const answeredList = getVisibleQuestions(record.categoryId, record.answers)
@@ -62,6 +65,7 @@ export function ResultPage({ id }: { id: string }) {
   const improve = () => {
     setDraft({
       categoryId: record.categoryId,
+      depth: 'full',
       answers: record.answers,
       stepId: rec.skippedQuestionIds[0] ?? null,
       updatedAt: new Date().toISOString(),
@@ -110,7 +114,7 @@ export function ResultPage({ id }: { id: string }) {
             <h2 id="best-heading" className="sr-only">
               最も適したAI
             </h2>
-            <div className={cx('grid gap-6', top.length > 1 && 'md:grid-cols-2')}>
+            <div className={cx('grid gap-6', top.length === 2 && 'md:grid-cols-2', top.length >= 3 && 'md:grid-cols-3')}>
               {top.map((t) => (
                 <TopCard key={t.ai} score={t} favorite={data.favorites.includes(t.ai)} onFavorite={() => toggleFavorite(t.ai)} />
               ))}

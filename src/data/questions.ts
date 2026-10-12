@@ -4,6 +4,7 @@ import type { Question } from '../types';
  * 質問データ
  * ----------------------------------------------------------------
  * - needs: この回答から生まれる「ニーズ」とその重み（AI選定に使用）
+ *          マイナスの値で、カテゴリの前提ニーズを打ち消せます（例：画像の指示文だけ欲しい → 画像生成は不要）
  * - prefer: ユーザーがすでに使う予定のAIへの小さな加点
  * - promptAdds: プロンプトに追加する具体的な要件
  * - showIf: 条件を満たすときだけ表示（回答による分岐）
@@ -59,9 +60,20 @@ const COMMON: Question[] = [
       { value: 'smartphone', label: 'スマートフォン中心', needs: { beginner: 1, voice: 1 } },
       { value: 'google', label: 'Googleのサービス', hint: 'Gmail・ドキュメント・ドライブなど', needs: { googleIntegration: 3 } },
       { value: 'microsoft', label: 'Microsoftのサービス', hint: 'Word・Excel・Outlookなど', needs: { integrations: 1 } },
-      { value: 'already_chatgpt', label: 'ChatGPTを使っている', prefer: { chatgpt: 1 } },
-      { value: 'already_gemini', label: 'Geminiを使っている', prefer: { gemini: 1 } },
-      { value: 'already_claude', label: 'Claudeを使っている', prefer: { claude: 1 } },
+    ],
+  },
+  {
+    id: 'using_ai',
+    title: 'ふだん使っている（使ってみたい）AIはありますか？',
+    help: '機能に大きな差がない場合は、使い慣れたAIをおすすめします。複数選択できます。',
+    type: 'multi',
+    promptLabel: 'ふだん使っているAI',
+    promptSection: 'none',
+    options: [
+      { value: 'chatgpt', label: 'ChatGPT', prefer: { chatgpt: 1 } },
+      { value: 'gemini', label: 'Gemini', prefer: { gemini: 1 } },
+      { value: 'claude', label: 'Claude', prefer: { claude: 1 } },
+      { value: 'none', label: 'まだ使ったことがない', needs: { beginner: 1 } },
     ],
   },
   {
@@ -184,7 +196,7 @@ const WEB: Question[] = [
     promptLabel: '開発環境',
     promptSection: 'background',
     options: [
-      { value: 'claude-code', label: 'Claude Code', hint: 'AIがファイルを直接編集してくれる', needs: { agenticCoding: 3 }, prefer: { claude: 2 } },
+      { value: 'claude-code', label: 'Claude Code', hint: 'AIがファイルを直接編集してくれる', needs: { agenticCoding: 3 }, prefer: { claude: 3 } },
       { value: 'vscode', label: 'VS Code などのエディタ', hint: 'AIの回答をコピーして使う', needs: { codeAssist: 2 } },
       { value: 'browser', label: 'ブラウザのAIだけで作りたい', hint: 'コードを貼り付けて動かす', needs: { beginner: 2, codeAssist: 1 } },
       { value: 'nocode', label: 'ノーコードツール', hint: 'STUDIO・Wix・ペライチなど', needs: { beginner: 2 }, promptAdds: ['コードではなく、ノーコードツール上での具体的な操作手順と文章・構成案を提示すること'] },
@@ -296,7 +308,7 @@ const CODE: Question[] = [
     promptLabel: '開発環境',
     promptSection: 'background',
     options: [
-      { value: 'claude-code', label: 'Claude Code', hint: 'ターミナルでAIがファイルを直接編集', needs: { agenticCoding: 3 }, prefer: { claude: 2 } },
+      { value: 'claude-code', label: 'Claude Code', hint: 'ターミナルでAIがファイルを直接編集', needs: { agenticCoding: 3 }, prefer: { claude: 3 } },
       { value: 'vscode', label: 'VS Code などのエディタ', needs: { codeAssist: 1 } },
       { value: 'browser', label: 'ブラウザのAIにコードを貼る', needs: { beginner: 1 } },
       { value: 'other-agent', label: '他のAI開発ツール', hint: 'Cursor・Codex・Gemini CLI など', needs: { agenticCoding: 2 } },
@@ -354,7 +366,7 @@ const IMAGE: Question[] = [
     options: [
       { value: 'new', label: '新しく作る', needs: { imageGen: 2 } },
       { value: 'edit', label: '手元の画像を編集する', needs: { imageEdit: 3, vision: 1 } },
-      { value: 'prompt', label: '他の画像生成ツール用の指示文がほしい', hint: 'Midjourney・Canva など', needs: { writing: 2, structured: 1 } },
+      { value: 'prompt', label: '他の画像生成ツール用の指示文がほしい', hint: 'Midjourney・Canva など', needs: { imageGen: -3, writing: 2, structured: 1 } },
     ],
   },
   {

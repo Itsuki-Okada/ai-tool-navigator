@@ -66,7 +66,7 @@ export function organizeAnswers(categoryId: CategoryId, answers: Answers) {
       continue;
     }
     if (!hasConcreteAnswer(a)) {
-      if (q.id !== 'notes') buckets.unknown.push(q.promptLabel);
+      if (q.id !== 'notes' && q.promptSection !== 'none') buckets.unknown.push(q.promptLabel);
       continue;
     }
     const desc = describeAnswer(q, a);

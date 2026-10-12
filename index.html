@@ -10,8 +10,161 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
     <title>AI TOOL NAVIGATOR — 「作りたい」を、最適なAIとプロンプトに。</title>
+
+    <!--
+      起動画面（ブート演出）
+      アプリ本体（JavaScript）の読み込み前から表示し、準備ができたら src/lib/boot.ts がフェードアウトします。
+      同じタブでは最初の1回だけ表示し、OSの「視差効果を減らす」設定では短く静的に表示します。
+    -->
+    <script>
+      try {
+        if (sessionStorage.getItem('atn:booted')) document.documentElement.classList.add('boot-skip');
+      } catch (e) {}
+    </script>
+    <style>
+      @property --boot-p {
+        syntax: '<integer>';
+        inherits: false;
+        initial-value: 0;
+      }
+      .boot-skip #boot { display: none; }
+      #boot {
+        position: fixed; inset: 0; z-index: 100;
+        display: grid; place-items: center;
+        background: radial-gradient(ellipse 70% 50% at 50% 42%, rgba(40, 120, 140, 0.18), transparent 70%), #04060b;
+        color: #e9eff6;
+        font-family: 'Inter Tight', 'Hiragino Sans', 'Noto Sans JP', system-ui, sans-serif;
+        transition: opacity 0.6s ease, transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.6s ease;
+        cursor: pointer;
+        overflow: hidden;
+      }
+      #boot.boot-out { opacity: 0; transform: scale(1.06); filter: blur(8px); pointer-events: none; }
+      #boot .grid {
+        position: absolute; inset: -56px;
+        background-image: linear-gradient(rgba(140, 200, 220, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(140, 200, 220, 0.05) 1px, transparent 1px);
+        background-size: 56px 56px;
+        mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 60%);
+        -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 60%);
+        animation: boot-grid 6s linear infinite;
+      }
+      #boot .scan {
+        position: absolute; left: 0; right: 0; height: 30%;
+        background: linear-gradient(to bottom, transparent, rgba(95, 227, 220, 0.06), transparent);
+        animation: boot-scan 2.4s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      }
+      #boot .core { position: relative; display: flex; flex-direction: column; align-items: center; width: min(360px, 86vw); }
+      #boot .radar { position: relative; width: 168px; height: 168px; animation: boot-in 0.8s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+      #boot .radar svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+      #boot .r1 { transform-origin: 84px 84px; animation: boot-spin 9s linear infinite; }
+      #boot .r2 { transform-origin: 84px 84px; animation: boot-spin 5.5s linear infinite reverse; }
+      #boot .r3 { transform-origin: 84px 84px; animation: boot-spin 3.2s linear infinite; }
+      #boot .sweep {
+        position: absolute; inset: 22px; border-radius: 50%;
+        background: conic-gradient(from 0deg, rgba(95, 227, 220, 0.32), rgba(95, 227, 220, 0) 28%, transparent);
+        mask-image: radial-gradient(circle, transparent 18%, #000 19%);
+        -webkit-mask-image: radial-gradient(circle, transparent 18%, #000 19%);
+        animation: boot-spin 2.2s linear infinite;
+      }
+      #boot .needle { transform-origin: 84px 84px; animation: boot-needle 2.6s cubic-bezier(0.6, 0, 0.2, 1) both; }
+      #boot .pulse { transform-box: fill-box; transform-origin: center; animation: boot-pulse 1.8s ease-out infinite; }
+      #boot .brand { margin-top: 26px; text-align: center; animation: boot-in 0.8s 0.15s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+      #boot .brand b { display: block; font-size: 15px; font-weight: 600; letter-spacing: 0.42em; padding-left: 0.42em; }
+      #boot .brand span {
+        display: block; margin-top: 4px; font-family: 'JetBrains Mono', ui-monospace, monospace;
+        font-size: 11px; letter-spacing: 0.62em; padding-left: 0.62em; color: #5fe3dc;
+        background: linear-gradient(90deg, #5fe3dc 0%, #e6fbfa 50%, #5fe3dc 100%); background-size: 200% 100%;
+        -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        animation: boot-shine 2s linear infinite;
+      }
+      #boot ul {
+        list-style: none; margin: 26px 0 0; padding: 0; width: 100%;
+        font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; line-height: 1.95; color: #8597ad;
+      }
+      #boot li { display: flex; gap: 8px; opacity: 0; animation: boot-line 0.35s ease forwards; }
+      #boot li::before { content: '›'; color: #5fe3dc; }
+      #boot li i { flex: 1; border-bottom: 1px dotted rgba(140, 200, 220, 0.25); transform: translateY(-5px); }
+      #boot li em { font-style: normal; color: #5fe3dc; }
+      #boot li:nth-child(1) { animation-delay: 0.35s; }
+      #boot li:nth-child(2) { animation-delay: 0.7s; }
+      #boot li:nth-child(3) { animation-delay: 1.05s; }
+      #boot li:nth-child(4) { animation-delay: 1.4s; }
+      #boot .bar { position: relative; width: 100%; height: 2px; margin-top: 18px; background: rgba(255, 255, 255, 0.07); border-radius: 2px; overflow: hidden; }
+      #boot .bar::after {
+        content: ''; position: absolute; inset: 0; transform-origin: left; transform: scaleX(0);
+        background: linear-gradient(90deg, #1fa7a2, #5fe3dc); box-shadow: 0 0 12px #5fe3dc;
+        animation: boot-bar 1.7s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+      }
+      #boot .meta {
+        display: flex; justify-content: space-between; width: 100%; margin-top: 8px;
+        font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 10px; letter-spacing: 0.14em; color: #5a6b82;
+      }
+      #boot .pct { color: #9af0ea; animation: boot-count 1.7s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards; counter-reset: p var(--boot-p); }
+      #boot .pct::before { content: counter(p) '%'; }
+      #boot .tag { margin-top: 28px; font-size: 12px; color: #8597ad; letter-spacing: 0.04em; animation: boot-in 0.8s 0.5s ease both; }
+      #boot .skip { position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); font-size: 11px; color: #5a6b82; }
+
+      @keyframes boot-spin { to { transform: rotate(360deg); } }
+      @keyframes boot-needle { 0% { transform: rotate(-200deg); } 70% { transform: rotate(18deg); } 100% { transform: rotate(0deg); } }
+      @keyframes boot-pulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(3); opacity: 0; } }
+      @keyframes boot-in { from { opacity: 0; transform: translateY(10px) scale(0.96); } to { opacity: 1; transform: none; } }
+      @keyframes boot-line { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+      @keyframes boot-bar { to { transform: scaleX(1); } }
+      @keyframes boot-count { to { --boot-p: 100; } }
+      @keyframes boot-shine { to { background-position: -200% 0; } }
+      @keyframes boot-scan { from { top: -30%; } to { top: 100%; } }
+      @keyframes boot-grid { to { transform: translateY(56px); } }
+
+      @media (prefers-reduced-motion: reduce) {
+        #boot *, #boot *::before, #boot *::after { animation: none !important; }
+        #boot li { opacity: 1; }
+        #boot .bar::after { transform: scaleX(1); }
+        #boot .pct::before { content: '100%'; }
+        #boot .scan { display: none; }
+      }
+    </style>
   </head>
   <body>
+    <div id="boot" role="status" aria-live="polite" aria-label="AI TOOL NAVIGATOR を起動しています">
+      <div class="grid" aria-hidden="true"></div>
+      <div class="scan" aria-hidden="true"></div>
+      <div class="core" aria-hidden="true">
+        <div class="radar">
+          <div class="sweep"></div>
+          <svg viewBox="0 0 168 168">
+            <g class="r1">
+              <circle cx="84" cy="84" r="80" fill="none" stroke="rgba(140,200,220,.22)" stroke-width="1" stroke-dasharray="2 6" />
+              <path d="M84 4 A80 80 0 0 1 160 60" fill="none" stroke="#5fe3dc" stroke-width="1.5" stroke-linecap="round" opacity=".8" />
+            </g>
+            <g class="r2">
+              <circle cx="84" cy="84" r="62" fill="none" stroke="rgba(140,200,220,.14)" stroke-width="1" />
+              <circle cx="84" cy="22" r="3.2" fill="#7ddcb0" />
+              <circle cx="137.7" cy="115" r="3.2" fill="#8fb4ff" />
+              <circle cx="30.3" cy="115" r="3.2" fill="#f0a983" />
+            </g>
+            <g class="r3">
+              <circle cx="84" cy="84" r="44" fill="none" stroke="rgba(95,227,220,.35)" stroke-width="1" stroke-dasharray="40 236" stroke-linecap="round" />
+            </g>
+            <circle cx="84" cy="84" r="26" fill="#0a101c" stroke="rgba(95,227,220,.35)" />
+            <g class="needle">
+              <path d="M84 64 L90 88 L84 84 L78 88 Z" fill="#5fe3dc" />
+            </g>
+            <circle class="pulse" cx="84" cy="84" r="3" fill="#5fe3dc" />
+            <circle cx="84" cy="84" r="2.6" fill="#e6fbfa" />
+          </svg>
+        </div>
+        <div class="brand"><b>AI TOOL</b><span>NAVIGATOR</span></div>
+        <ul>
+          <li>LOADING AI PROFILES<i></i><em>OK</em></li>
+          <li>MAPPING 12 CATEGORIES<i></i><em>OK</em></li>
+          <li>CALIBRATING ROUTE ENGINE<i></i><em>OK</em></li>
+          <li>LOCAL MODE · NO DATA SENT<i></i><em>✓</em></li>
+        </ul>
+        <div class="bar"></div>
+        <div class="meta"><span>SYSTEM BOOT</span><span class="pct"></span></div>
+        <p class="tag">「作りたい」を、最適なAIとプロンプトに。</p>
+      </div>
+      <p class="skip" aria-hidden="true">クリックでスキップ</p>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

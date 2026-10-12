@@ -50,9 +50,9 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
     id: 'writing',
     label: '文章作成',
     cells: {
-      chatgpt: { text: '幅広い文体・形式に対応' },
+      chatgpt: { text: '幅広い文体・形式に対応。画像生成と組み合わせた制作がしやすい' },
       gemini: { text: '文章作成・要約に対応。Googleドキュメントへの書き出しがしやすい', varies: true },
-      claude: { text: '自然で読みやすい長文の作成・推敲に定評がある' },
+      claude: { text: '長文の作成・推敲に対応。長い参考資料をふまえた執筆がしやすい' },
     },
   },
   {
@@ -71,7 +71,7 @@ export const COMPARISON_ROWS: ComparisonRow[] = [
     cells: {
       chatgpt: { text: 'Web検索を使った回答・調査レポート機能に対応', varies: true },
       gemini: { text: 'Google検索と組み合わせた回答・調査レポート機能に対応', varies: true },
-      claude: { text: 'Web検索を使った回答に対応', varies: true },
+      claude: { text: 'Web検索を使った回答・調査機能に対応', varies: true },
     },
   },
   {

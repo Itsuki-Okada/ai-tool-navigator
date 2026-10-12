@@ -8,6 +8,12 @@ import type { AiId, AiProfile, NeedId, NeedMeta } from '../types';
  * - 機能や料金はプラン・モデル・地域・時期で変わります。
  *   見直したら lastReviewed を更新してください。
  * - 確認できていない内容は note に断定的に書かず、varies: true を付けます。
+ *
+ * 【判定の公平性について】
+ * 文章の上手さ・コードの品質・発想力のような「主観的な品質」は、
+ * 根拠のある優劣をつけられないため3つとも同じ値にしています。
+ * 差をつけるのは、画像・動画の生成機能の有無、Googleサービスとの統合、
+ * 扱える資料の長さなど「機能として確認できる違い」だけです。
  */
 
 export const DATA_LAST_REVIEWED = '2026-10-12';
@@ -68,9 +74,9 @@ export const AI_PROFILES: Record<AiId, AiProfile> = {
     ],
     capabilities: {
       longContext: { level: 2, note: '長めの資料も扱えます', limitation: '一度に扱える量はモデル・プランによって異なります', varies: true },
-      agenticCoding: { level: 2, note: 'Codex などの開発向けツールが提供されています', varies: true },
+      agenticCoding: { level: 3, note: 'Codex などの開発向けツールでプロジェクトを直接編集できます', varies: true },
       codeAssist: { level: 3, note: 'コードの生成・説明・修正に幅広く対応します' },
-      writing: { level: 2, note: '多様な文体の文章作成に対応します' },
+      writing: { level: 3, note: '多様な文体の文章作成に対応します' },
       imageGen: { level: 3, note: '会話の中で画像を生成できます', varies: true },
       imageEdit: { level: 3, note: 'アップロードした画像をもとに編集・再生成できます', varies: true },
       videoGen: { level: 2, note: '動画生成機能（Sora）が提供されています', limitation: '動画生成はプランや地域によって利用条件が異なります', varies: true },
@@ -80,7 +86,7 @@ export const AI_PROFILES: Record<AiId, AiProfile> = {
       googleIntegration: { level: 1, note: '一部のサービスはコネクタ経由で連携できます', limitation: 'Googleサービスとの統合はGeminiほど深くありません', varies: true },
       integrations: { level: 3, note: 'GPTs やアプリ連携などで機能を拡張できます', varies: true },
       dataAnalysis: { level: 3, note: 'ファイルをアップロードして、コードを実行しながら集計・グラフ化できます' },
-      ideation: { level: 2, note: 'アイデア出しや壁打ちに使えます' },
+      ideation: { level: 3, note: 'アイデア出しや壁打ちに使えます' },
       beginner: { level: 3, note: '利用者が多く、使い方の情報を見つけやすいです' },
       freeUse: { level: 2, note: '無料プランがあります', limitation: '無料プランでは利用できる機能や回数が限られます', varies: true },
       structured: { level: 3, note: '見出しや箇条書きで整理された長い指示にも対応します' },
@@ -108,9 +114,9 @@ export const AI_PROFILES: Record<AiId, AiProfile> = {
     ],
     capabilities: {
       longContext: { level: 3, note: '非常に長い資料を一度に扱えるモデルが提供されています', varies: true },
-      agenticCoding: { level: 2, note: 'Gemini CLI など開発向けツールが提供されています', varies: true },
-      codeAssist: { level: 2, note: 'コードの生成・説明・修正に対応します' },
-      writing: { level: 2, note: '文章作成や要約に対応します' },
+      agenticCoding: { level: 3, note: 'Gemini CLI などの開発向けツールでプロジェクトを直接編集できます', varies: true },
+      codeAssist: { level: 3, note: 'コードの生成・説明・修正に対応します' },
+      writing: { level: 3, note: '文章作成や要約に対応します' },
       imageGen: { level: 3, note: '会話の中で画像を生成・編集できます', varies: true },
       imageEdit: { level: 3, note: 'アップロードした画像の編集に対応します', varies: true },
       videoGen: { level: 2, note: '動画生成機能（Veo）が提供されています', limitation: '動画生成は有料プランなど利用条件があります', varies: true },
@@ -119,11 +125,11 @@ export const AI_PROFILES: Record<AiId, AiProfile> = {
       deepResearch: { level: 3, note: '複数のWebページを調べてレポートにまとめる機能があります', varies: true },
       googleIntegration: { level: 3, note: 'Gmail・ドキュメント・ドライブなどと連携できます', varies: true },
       integrations: { level: 2, note: 'Googleサービスを中心に連携機能があります', varies: true },
-      dataAnalysis: { level: 2, note: 'ファイルやスプレッドシートの分析に対応します', varies: true },
-      ideation: { level: 2, note: 'アイデア出しや壁打ちに使えます' },
+      dataAnalysis: { level: 3, note: 'ファイルやスプレッドシートの分析に対応します', varies: true },
+      ideation: { level: 3, note: 'アイデア出しや壁打ちに使えます' },
       beginner: { level: 3, note: 'Googleアカウントがあればすぐに始められます' },
       freeUse: { level: 2, note: '無料で使える範囲があります', limitation: '無料の範囲では利用できるモデルや回数が限られます', varies: true },
-      structured: { level: 2, note: '整理された指示に対応します' },
+      structured: { level: 3, note: '見出しや箇条書きで整理された長い指示に対応します' },
       voice: { level: 3, note: '音声での対話機能があります', varies: true },
     },
   },
@@ -151,21 +157,21 @@ export const AI_PROFILES: Record<AiId, AiProfile> = {
       longContext: { level: 3, note: '長い資料を読み込んで処理するのに向いています', varies: true },
       agenticCoding: { level: 3, note: 'Claude Code でプロジェクト全体を読み、編集・実行・修正まで進められます', limitation: 'Claude Code は有料プランまたはAPI契約が必要です', varies: true },
       codeAssist: { level: 3, note: 'コードの生成・レビュー・修正に対応します' },
-      writing: { level: 3, note: '自然で読みやすい長文の作成・推敲に向いています' },
+      writing: { level: 3, note: '長文の作成・推敲に対応します' },
       imageGen: { level: 0, note: '画像生成用のプロンプト作成には活用できます', limitation: '画像を直接生成する機能は標準では備えていません' },
       imageEdit: { level: 0, note: '画像の内容を読み取って改善案を出せます', limitation: '画像を直接編集する機能は標準では備えていません' },
       videoGen: { level: 0, note: '台本や構成づくりには活用できます', limitation: '動画を直接生成する機能は標準では備えていません' },
-      vision: { level: 2, note: '画像やPDFの内容を読み取れます' },
-      webSearch: { level: 2, note: 'Web検索機能を使った回答に対応します', varies: true },
-      deepResearch: { level: 2, note: '検索を組み合わせた調査に対応します', varies: true },
+      vision: { level: 3, note: '画像やPDFの内容を読み取れます' },
+      webSearch: { level: 3, note: 'Web検索機能を使った回答に対応します', varies: true },
+      deepResearch: { level: 3, note: '複数のWebページを調べてレポートにまとめる機能があります', varies: true },
       googleIntegration: { level: 1, note: '一部のGoogleサービスはコネクタ経由で連携できます', limitation: 'Googleサービスとの統合はGeminiほど深くありません', varies: true },
       integrations: { level: 3, note: 'MCP（外部ツールとつなぐ仕組み）で多様なサービスと連携できます', varies: true },
-      dataAnalysis: { level: 2, note: 'ファイルを読み込んだ分析やコード実行に対応します', varies: true },
-      ideation: { level: 2, note: 'アイデア出しや壁打ちに使えます' },
-      beginner: { level: 2, note: 'シンプルな画面で使えます', limitation: 'Claude Code は黒い画面（ターミナル）の操作に慣れが必要です' },
+      dataAnalysis: { level: 3, note: 'ファイルを読み込んだ分析やコード実行に対応します', varies: true },
+      ideation: { level: 3, note: 'アイデア出しや壁打ちに使えます' },
+      beginner: { level: 3, note: 'シンプルな画面ですぐに使い始められます' },
       freeUse: { level: 2, note: '無料プランがあります', limitation: '無料プランでは利用回数が限られ、Claude Code は利用できません', varies: true },
-      structured: { level: 3, note: '細かい条件を含む長い指示に沿った作業に向いています' },
-      voice: { level: 2, note: '音声での対話に対応しています', varies: true },
+      structured: { level: 3, note: '細かい条件を含む長い指示に対応します' },
+      voice: { level: 3, note: '音声での対話に対応しています', varies: true },
     },
   },
 };

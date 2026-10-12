@@ -79,6 +79,35 @@ describe('画面の動作', () => {
     expect(stored.draft).toBeNull();
   });
 
+  it('かんたん診断と詳しく診断を切り替えられ、操作方法の案内が表示される', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await go('#/navigate/web');
+    const bar = await screen.findByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuetext', '5問中1問目');
+    await user.click(screen.getByRole('radio', { name: /詳しく/ }));
+    expect(screen.getByRole('progressbar').getAttribute('aria-valuetext')).toMatch(/^1[0-9]問中1問目$/);
+    expect(screen.getByText('入力したら「次へ」を押してください（空欄のままでも進めます）')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /次へ/ }));
+    // 自由入力欄がある質問は、選んでも自動では進まない（案内を表示）
+    expect(await screen.findByText('選んだあと、必要なら補足を入力して「次へ」を押してください')).toBeInTheDocument();
+    await user.click(screen.getByRole('radio', { name: /ランディングページ/ }));
+    await new Promise((r) => setTimeout(r, 300));
+    expect(screen.getByRole('heading', { name: '作りたいものの種類は？' })).toBeInTheDocument();
+  });
+
+  it('テンプレートで使用するAIを切り替えると形式が変わる', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await go('#/library/review');
+    const value = () => (screen.getByLabelText('生成されたプロンプト') as HTMLTextAreaElement).value;
+    await user.click(await screen.findByRole('radio', { name: 'ChatGPT向け' }));
+    expect(value()).toContain('回答のルール');
+    await user.click(screen.getByRole('radio', { name: 'Claude Code向け' }));
+    expect(value()).toContain('ファイルを直接作成・編集');
+  });
+
   it('保存一覧から削除できる（2段階確認）', async () => {
     const user = userEvent.setup();
     localStorage.setItem(

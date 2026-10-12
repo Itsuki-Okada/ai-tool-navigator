@@ -9,6 +9,7 @@ import { recommend } from '../diagnosis/recommend';
 import { availableTargets, generatePrompt, suggestTarget } from '../prompt/generator';
 import { fillTemplate, missingRequired, placeholdersOf, searchTemplates, UNFILLED } from '../prompt/template';
 import { buildExport, createEmptyData, mergeData, parseImport, sanitizeAppData } from '../storage/validate';
+import { adaptTemplate, availableTemplateTargets, defaultTemplateTarget } from '../prompt/templateAdapter';
 import type { Answers } from '../../types';
 
 const one = (v: string) => ({ values: [v] });
@@ -39,6 +40,16 @@ describe('データ定義の整合性', () => {
       for (const k of keys) expect(placeholdersOf(t.body), `${t.id}: unused ${k}`).toContain(k);
     }
   });
+  it('かんたん診断の質問は5問で、詳しく診断の質問に含まれ、順番も同じ', () => {
+    for (const c of CATEGORIES) {
+      expect(c.quickQuestionIds, c.id).toHaveLength(5);
+      expect(c.quickQuestionIds[0]).toBe('goal');
+      const idx = c.quickQuestionIds.map((id) => c.questionIds.indexOf(id));
+      expect(idx.every((i) => i >= 0), c.id).toBe(true);
+      expect([...idx].sort((a, b) => a - b), c.id).toEqual(idx);
+      expect(c.questionIds, c.id).toContain('using_ai');
+    }
+  });
   it('比較表は3つのAIすべての値を持つ', () => {
     for (const r of COMPARISON_ROWS) expect(Object.keys(r.cells).sort()).toEqual(['chatgpt', 'claude', 'gemini']);
   });
@@ -61,6 +72,30 @@ describe('診断フロー（分岐）', () => {
     const pruned = pruneAnswers('web', { web_env: one('nocode'), web_storage: one('cloud'), web_login: one('yes') });
     expect(pruned.web_storage).toBeUndefined();
     expect(pruned.web_login).toBeUndefined();
+  });
+});
+
+describe('AI選定の公平性', () => {
+  it('何も答えていないときは、どのカテゴリでも1つのAIだけを1位にしない', () => {
+    for (const c of CATEGORIES) {
+      expect(recommend(c.id, {}).topGroup.length, c.id).toBeGreaterThanOrEqual(2);
+    }
+  });
+  it('ふだん使っているAIだけでは、機能差のある判定を覆さない', () => {
+    const r = recommend('image', { img_mode: one('new'), using_ai: one('claude') });
+    expect(r.topGroup).not.toContain('claude');
+  });
+  it('機能差がないときは、ふだん使っているAIが先頭に来る', () => {
+    expect(recommend('writing', { using_ai: one('gemini') }).topGroup[0]).toBe('gemini');
+  });
+  it('画像生成ツール向けの指示文だけが欲しい場合は Claude も候補になる', () => {
+    const r = recommend('image', { img_mode: one('prompt') });
+    expect(r.topGroup).toContain('claude');
+    expect(r.ranking.find((x) => x.ai === 'claude')!.blockedBy).toEqual([]);
+  });
+  it('かんたん診断の質問は depth=quick で絞り込まれる', () => {
+    expect(getVisibleQuestions('web', {}, 'quick').map((q) => q.id)).toEqual(['goal', 'web_type', 'web_env', 'web_storage', 'using_ai']);
+    expect(getVisibleQuestions('web', {}).length).toBeGreaterThan(5);
   });
 });
 
@@ -185,6 +220,35 @@ describe('テンプレート', () => {
   it('検索と絞り込み', () => {
     expect(searchTemplates(TEMPLATES, 'Instagram', null).map((x) => x.id)).toContain('sns-instagram');
     expect(searchTemplates(TEMPLATES, '', 'バグ修正').every((x) => x.group === 'バグ修正')).toBe(true);
+  });
+});
+
+describe('テンプレートの出力先切り替え', () => {
+  const bug = TEMPLATES.find((x) => x.id === 'bug-error')!;
+  const img = TEMPLATES.find((x) => x.id === 'img-eyecatch')!;
+  it('出力先ごとに構成が変わる', () => {
+    const filled = fillTemplate(bug, { doing: 'build', error: 'E' });
+    const claude = adaptTemplate(filled, bug, 'claude');
+    const gpt = adaptTemplate(filled, bug, 'chatgpt');
+    const cc = adaptTemplate(filled, bug, 'claude-code');
+    expect(claude).toContain('<instructions>');
+    expect(claude).toContain('<working_style>');
+    expect(gpt).not.toContain('<instructions>');
+    expect(gpt).toContain('回答のルール');
+    expect(cc).toContain('ファイルを直接作成・編集');
+    expect(cc).toContain('ビルド');
+    for (const t of [claude, gpt, cc]) expect(t).toContain('build');
+  });
+  it('開発系だけ開発向けの出力先を選べる', () => {
+    expect(availableTemplateTargets(bug)).toContain('claude-code');
+    expect(availableTemplateTargets(img)).toEqual(['chatgpt', 'gemini', 'claude']);
+    expect(availableTemplateTargets(TEMPLATES.find((x) => x.id === 'webapp-claude-code')!)).toEqual(['claude-code']);
+  });
+  it('画像テンプレートを Claude 向けにすると、画像生成用プロンプトの作成に切り替わる', () => {
+    expect(adaptTemplate(fillTemplate(img, { title: 'x' }), img, 'claude')).toContain('画像生成ツール');
+  });
+  it('すべてのテンプレートの既定の出力先は選択肢に含まれる', () => {
+    for (const t of TEMPLATES) expect(availableTemplateTargets(t)).toContain(defaultTemplateTarget(t));
   });
 });
 

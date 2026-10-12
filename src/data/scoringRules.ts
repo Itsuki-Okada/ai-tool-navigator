@@ -174,6 +174,8 @@ export const CATEGORY_RULES: Record<CategoryId, CategoryRule> = {
 export const CAUTION_RULES: CautionRule[] = [
   { when: [{ q: 'budget', in: ['free'] }, { q: 'web_env', in: ['claude-code'] }], text: 'Claude Code は無料プランでは利用できません。無料で進める場合は、ブラウザ版のAIでコードを作る方法も検討してください。' },
   { when: [{ q: 'budget', in: ['free'] }, { q: 'code_env', in: ['claude-code'] }], text: 'Claude Code は無料プランでは利用できません。無料で進める場合は、ブラウザ版のAIにコードを貼り付ける方法も検討してください。' },
+  { when: [{ q: 'web_env', in: ['claude-code'] }, { q: 'skill_code', in: ['none'] }], text: 'Claude Code は黒い画面（ターミナル）で操作します。はじめての場合は、公式ドキュメントのセットアップ手順を見ながら進めてください。' },
+  { when: [{ q: 'code_env', in: ['claude-code'] }, { q: 'code_understanding', in: ['low'] }], text: 'Claude Code はファイルを直接変更します。変更内容が分からない場合は、作業前に Git で保存しておくと元に戻せます。' },
   { when: [{ q: 'web_storage', in: ['cloud'] }], text: 'サーバーにデータを保存する場合、セキュリティ設定（アクセス権限など）を必ず確認してください。' },
   { when: [{ q: 'web_features', in: ['payment'] }], text: '決済機能はカード情報を自分で扱わず、決済サービスの仕組みを使ってください。本番公開前に専門家の確認をおすすめします。' },
   { when: [{ q: 'code_error', in: ['message'] }], text: 'エラーメッセージを貼り付けるときは、APIキー・パスワード・個人情報が含まれていないか確認してください。' },
@@ -205,7 +207,13 @@ export const PLAYBOOK_RULES: PlaybookRule[] = [
   { when: [{ q: 'quality', in: ['high'] }], step: '一度で完成させようとせず、「計画 → 作成 → 自己チェック → 修正」の順に進めると品質が安定します。' },
 ];
 
-/** 1位と2位の差がこの値未満なら「同程度」とみなす */
-export const TIE_THRESHOLD = 0.035;
-/** 「ユーザーの意向」による加点の大きさ */
+/**
+ * 1位との点数差（重み × レベルの合計の差）がこの値未満なら「同程度」とみなす
+ * 例：重み1のニーズで1段階だけ差がある程度なら同程度
+ * 判断材料が少ないほど不確かなので、幅を広げます
+ */
+export const TIE_POINTS = { high: 2, medium: 2.5, low: 3.5 } as const;
+/** 「ふだん使っているAI」などの意向1つあたりの加点（点数） */
+export const PREFER_POINTS = 1.5;
+/** 意向による表示用スコアの加点 */
 export const PREFER_BONUS = 0.04;
